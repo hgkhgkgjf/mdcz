@@ -4,6 +4,18 @@ import { defineConfig, type Plugin } from "vite";
 
 const workspaceResolve = (subpath: string): string => resolve(__dirname, "../..", subpath);
 const serverDist = resolve(__dirname, "dist");
+const serverRuntimeExternals = [
+  "@trpc/server",
+  "@trpc/server/adapters/fastify",
+  "better-sqlite3",
+  "drizzle-orm",
+  "drizzle-orm/better-sqlite3",
+  "drizzle-orm/better-sqlite3/migrator",
+  "drizzle-orm/sqlite-core",
+  "fastify",
+  "impit",
+  "sharp",
+];
 
 const cleanServerOutput = async (): Promise<void> => {
   const entries = await readdir(serverDist, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
@@ -42,21 +54,13 @@ export default defineConfig({
     },
     outDir: "dist",
     rollupOptions: {
-      external: [
-        /^node:/,
-        "@trpc/server",
-        "@trpc/server/adapters/fastify",
-        "better-sqlite3",
-        "fastify",
-        "impit",
-        "sharp",
-      ],
+      external: [/^node:/, ...serverRuntimeExternals],
       output: {
         entryFileNames: "server.js",
       },
     },
     ssr: true,
-    target: "node20",
+    target: "node24",
   },
   plugins: [serverDistributionAssets()],
   resolve: {
@@ -68,5 +72,9 @@ export default defineConfig({
       { find: /^@mdcz\/shared\/(.+)$/, replacement: workspaceResolve("packages/shared/$1") },
       { find: /^@mdcz\/media-store$/, replacement: workspaceResolve("packages/media-store/src/index.ts") },
     ],
+  },
+  ssr: {
+    external: serverRuntimeExternals,
+    noExternal: true,
   },
 });

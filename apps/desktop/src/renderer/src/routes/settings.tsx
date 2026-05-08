@@ -106,7 +106,7 @@ function SettingsComponent() {
         resetConfig: ipc.config.reset,
         saveConfig: ipc.config.save,
         subscribeInFlightSaves: useSettingsSavingStore.subscribe,
-        testLlm: ipc.translate.testLlm,
+        testLLM: ipc.translate.testLlm,
         updateCurrentConfigCache: (flatPayload: Record<string, unknown>) => {
           queryClient.setQueryData(CURRENT_CONFIG_QUERY_KEY, (previous) => {
             if (typeof previous !== "object" || previous === null || Array.isArray(previous)) {

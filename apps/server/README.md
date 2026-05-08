@@ -12,29 +12,49 @@ node dist/server.js
 
 The server listens on `127.0.0.1:3838` by default and serves the WebUI from the same origin. Open `http://127.0.0.1:3838` after startup. Use `pnpm build:server` only when you need the Node server bundle without rebuilding or embedding the WebUI static files.
 
-## Release Artifact
-
-The GitHub release workflow uploads `mdcz-server-webui-<version>.tar.gz` next to the Desktop installers. The archive contains:
-
-- `dist/server.js` - Node server entrypoint;
-- `dist/web/` - bundled WebUI static files served by the server;
-- `dist/persistence/drizzle/` - SQLite migration files;
-- `package.json` - minimal runtime dependency manifest and `pnpm start`;
-- `.env.example` - deployment environment reference;
-- `README.md` - this startup guide.
-
-Extract the archive, review `.env.example`, install production dependencies, then start the server from the archive root:
+## Deploy (Docker — recommended for self-hosters)
 
 ```bash
-pnpm install --prod
-pnpm start
+docker run -d \
+  --name mdcz \
+  -p 3838:3838 \
+  -v mdcz-data:/data \
+  --restart unless-stopped \
+  ghcr.io/shotheadman/mdcz:latest
 ```
+
+The image (`linux/amd64` + `linux/arm64`) is published from `apps/server/Dockerfile` on every release. State persists in the `mdcz-data` volume (`/data`).
+
+## Release Artifact
+
+The GitHub release workflow uploads `mdcz-<version>.tar.gz` next to the Desktop installers. The archive contains:
+
+- `server.js` - Node server entrypoint;
+- `web/` - bundled WebUI static files served by the server;
+- `persistence/drizzle/` - SQLite migration files;
+- `package.json` - minimal runtime dependency manifest with `pnpm start`;
+- `.env.example` - deployment environment reference;
+- `start.sh` / `start.bat` - launchers that load `./.env` (POSIX) and apply defaults;
+- `systemd/mdcz.service` - systemd unit template (edit `# REPLACE_ME` lines);
+- `README.md` - end-user deployment guide (Docker → systemd → portable).
+
+Extract the archive, install runtime dependencies, then start:
+
+```bash
+tar -xzf mdcz-<version>.tar.gz
+cd mdcz-<version>
+npm install --omit=dev --no-audit --no-fund
+./start.sh
+```
+
+For the systemd / AUR / Deb path, see the bundled `README.md` and `systemd/mdcz.service`.
 
 ## Runtime Environment
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `PORT` | HTTP port. | `3838` |
+| `MDCZ_HOST` | Bind address for the HTTP listener. Set to `0.0.0.0` to expose to the network (the Docker image already does this). | `127.0.0.1` |
 | `MDCZ_HOME` | Base directory for server config and data. | Linux: `$XDG_STATE_HOME/mdcz` or `~/.local/state/mdcz`; other platforms: `~/.mdcz` |
 | `MDCZ_CONFIG_DIR` | Directory for TOML profiles and auth state. | `$MDCZ_HOME/config` |
 | `MDCZ_DATA_DIR` | Directory for server data. | `$MDCZ_HOME/data` |

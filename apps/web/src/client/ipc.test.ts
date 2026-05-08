@@ -36,7 +36,7 @@ describe("web ipc settings adapter", () => {
     await expect(ipc.network.checkCookies()).resolves.toEqual({
       results: [{ site: "JavDB", valid: true, message: "Cookie 有效" }],
     });
-    await expect(ipc.translate.testLlm({ llmModelName: "gpt-test" })).resolves.toEqual({
+    await expect(ipc.translate.testLLM({ llmModelName: "gpt-test" })).resolves.toEqual({
       success: true,
       message: "连接成功",
     });

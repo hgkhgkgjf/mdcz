@@ -15,7 +15,7 @@ interface ServerPathFieldProps {
 export function ServerPathField({ field, placeholder, isDirectory = true }: ServerPathFieldProps) {
   const services = useSettingsServices();
   const kind = isDirectory ? "directory" : "file";
-  const supportsBrowse = services.supportsPathBrowse ?? true;
+  const supportsBrowse = !services.isServer;
   const suggestions = services.getPathSuggestions?.(kind) ?? [];
   const suggestDirectoryPath = services.suggestDirectoryPath;
 

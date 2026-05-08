@@ -1,8 +1,9 @@
 import { buildServer } from "./app";
-import { parsePort } from "./config";
+import { parseHost, parsePort } from "./config";
 
 const startServer = async (): Promise<void> => {
   const port = parsePort(process.env.PORT);
+  const host = parseHost(process.env.MDCZ_HOST);
   const { fastify } = buildServer();
 
   const shutdown = async (): Promise<void> => {
@@ -17,11 +18,11 @@ const startServer = async (): Promise<void> => {
   });
 
   await fastify.listen({
-    host: "127.0.0.1",
+    host,
     port,
   });
 
-  console.log(`MDCz server listening on http://127.0.0.1:${port}`);
+  console.log(`MDCz server listening on http://${host}:${port}`);
 };
 
 void startServer();

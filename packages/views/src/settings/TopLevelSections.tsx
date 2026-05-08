@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { SectionAnchor } from "./SectionAnchor";
 import { useSettingsSearch } from "./SettingsSearchContext";
 import { SettingsSectionModeProvider } from "./SettingsSectionModeContext";
+import { useSettingsServices } from "./SettingsServices";
 import { SitePriorityEditorField } from "./SitePriorityEditorField";
 import { Subsection } from "./Subsection";
 import {
@@ -165,6 +166,8 @@ export function FileBehaviorTopLevelSection({ forceOpen = false }: { forceOpen?:
 }
 
 export function SystemTopLevelSection({ initialUseCustomTitleBar, forceOpen = false }: SystemSectionProps) {
+  const services = useSettingsServices();
+
   return (
     <SectionAnchor
       id="system"
@@ -177,9 +180,11 @@ export function SystemTopLevelSection({ initialUseCustomTitleBar, forceOpen = fa
       <Subsection title="界面" className="mb-6 last:mb-0">
         <UiSection initialUseCustomTitleBar={initialUseCustomTitleBar} />
       </Subsection>
-      <Subsection title="快捷键" className="mb-6 last:mb-0">
-        <ShortcutsSection />
-      </Subsection>
+      {!services.isServer ? (
+        <Subsection title="快捷键" className="mb-6 last:mb-0">
+          <ShortcutsSection />
+        </Subsection>
+      ) : null}
     </SectionAnchor>
   );
 }

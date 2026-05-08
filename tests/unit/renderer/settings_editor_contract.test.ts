@@ -51,7 +51,7 @@ const testSettingsServices = {
   relaunchApp: vi.fn(async () => undefined),
   resetConfig: vi.fn(async () => undefined),
   saveConfig: vi.fn(async () => undefined),
-  testLlm: vi.fn(async () => ({ success: true, message: "" })),
+  testLLM: vi.fn(async () => ({ success: true, message: "" })),
 } satisfies SettingsServices;
 const createTestSettingsServices = (overrides: Partial<SettingsServices> = {}): SettingsServices => ({
   ...testSettingsServices,
@@ -726,7 +726,7 @@ describe("settings editor render contracts", () => {
         { label: "Movies", path: "E:/Movies" },
         { label: "Output", path: "E:/Output" },
       ],
-      supportsPathBrowse: false,
+      isServer: true,
     });
     const html = renderToStaticMarkup(
       createElement(

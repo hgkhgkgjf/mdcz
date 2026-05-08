@@ -28,8 +28,8 @@ export interface WorkbenchSetupPort {
   browseDirectory(kind: "scan" | "target", currentPath: string): Promise<string | null>;
   scanCandidates(scanDir: string): Promise<CandidateScanResult>;
   savePaths(scanDir: string, targetDir: string): Promise<void>;
+  isServer?: boolean;
   suggestDirectory?: (input: { kind: "scan" | "target"; path: string }) => Promise<ServerPathSuggestResponse>;
-  supportsPathBrowse?: boolean;
 }
 
 export interface WorkbenchSetupAdapterProps {
@@ -267,7 +267,7 @@ export function WorkbenchSetupAdapter({
       presetId={presetId}
       runSummary={runSummary}
       primaryDisabled={primaryDisabled}
-      supportsPathBrowse={port.supportsPathBrowse}
+      isServer={port.isServer}
       onSuggestScanDir={
         suggestDirectory
           ? async (input) => toPathAutocompleteResult(await suggestDirectory({ kind: "scan", path: input.path }))

@@ -27,7 +27,7 @@ export interface WorkbenchSetupViewProps {
   presetId: MaintenancePresetId;
   runSummary: string;
   primaryDisabled: boolean;
-  supportsPathBrowse?: boolean;
+  isServer?: boolean;
   onSuggestScanDir?: (input: { path: string }) => Promise<PathAutocompleteResult>;
   onSuggestTargetDir?: (input: { path: string }) => Promise<PathAutocompleteResult>;
   formatBytes: (value: number, options?: { trimTrailingZeros?: boolean }) => string;
@@ -172,7 +172,7 @@ export function WorkbenchSetupView({
   presetId,
   runSummary,
   primaryDisabled,
-  supportsPathBrowse = true,
+  isServer = false,
   onSuggestScanDir,
   onSuggestTargetDir,
   formatBytes,
@@ -208,7 +208,7 @@ export function WorkbenchSetupView({
                 placeholder={configLoading ? "正在读取配置..." : "请选择需要扫描的媒体目录"}
                 onBrowse={onBrowseScanDir}
                 onChange={onScanDirChange}
-                supportsBrowse={supportsPathBrowse}
+                supportsBrowse={!isServer}
                 loadSuggestions={onSuggestScanDir ? (value) => onSuggestScanDir({ path: value }) : undefined}
               />
               <PathControl
@@ -217,7 +217,7 @@ export function WorkbenchSetupView({
                 placeholder={configLoading ? "正在读取配置..." : "请选择输出目录"}
                 onBrowse={onBrowseTargetDir}
                 onChange={onTargetDirChange}
-                supportsBrowse={supportsPathBrowse}
+                supportsBrowse={!isServer}
                 loadSuggestions={onSuggestTargetDir ? (value) => onSuggestTargetDir({ path: value }) : undefined}
               />
             </div>

@@ -53,10 +53,10 @@ export const createSettingsServices = (queryClient: QueryClient): SettingsServic
       entries: result.entries.map((entry) => ({ label: entry.label, path: entry.path })),
     };
   },
+  isServer: true,
   subscribeInFlightSaves: useSettingsSavingStore.subscribe,
-  supportsPathBrowse: false,
   watermarkDirectoryActionLabel: "复制服务器路径",
-  testLlm: ipc.translate.testLlm,
+  testLLM: ipc.translate.testLLM,
   updateCurrentConfigCache: (flatPayload: Record<string, unknown>) => {
     queryClient.setQueryData(CURRENT_CONFIG_QUERY_KEY, (previous) => {
       if (typeof previous !== "object" || previous === null || Array.isArray(previous)) {

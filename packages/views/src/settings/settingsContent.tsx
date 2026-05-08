@@ -798,7 +798,7 @@ export function TranslateSection() {
 
     setTesting(true);
     try {
-      const result = await services.testLlm(input);
+      const result = await services.testLLM(input);
       if (result.success) {
         notifier.success(result.message);
       } else {

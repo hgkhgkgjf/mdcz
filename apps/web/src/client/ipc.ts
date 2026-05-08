@@ -108,7 +108,7 @@ export const ipc = {
     checkCookies: async () => await api.network.checkCookies(),
   },
   translate: {
-    testLlm: async (input: TranslateTestLlmInputDto) => await api.translate.testLlm(input),
+    testLLM: async (input: TranslateTestLlmInputDto) => await api.translate.testLlm(input),
   },
   config: {
     get: async (path?: string) => {
@@ -158,7 +158,7 @@ export const ipc = {
   file: {
     browse: async (kind: "file" | "directory" = "file", filters: BrowseFilter[] = []): Promise<BrowseResult> => {
       if (kind !== "file") {
-        return { canceled: true, paths: [] };
+        throw new Error("Web 端不支持目录选择");
       }
       const file = await promptForFile(filters);
       if (!file) {

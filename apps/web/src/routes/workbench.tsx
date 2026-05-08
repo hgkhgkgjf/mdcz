@@ -45,7 +45,7 @@ const createWebSetupPort = (): WorkbenchSetupPort => ({
   browseDirectory: async (_kind, currentPath) => {
     return currentPath || null;
   },
-  supportsPathBrowse: false,
+  isServer: true,
   suggestDirectory: async ({ kind, path }) =>
     await api.serverPaths.suggest({
       path,

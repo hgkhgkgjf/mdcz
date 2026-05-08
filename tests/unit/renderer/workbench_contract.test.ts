@@ -157,7 +157,7 @@ describe("workbench setup contract", () => {
         presetId: "read_local",
         runSummary: "",
         primaryDisabled: true,
-        supportsPathBrowse: false,
+        isServer: true,
         formatBytes: () => "0 B",
         onBrowseScanDir: () => undefined,
         onBrowseTargetDir: () => undefined,

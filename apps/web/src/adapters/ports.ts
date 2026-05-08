@@ -74,7 +74,7 @@ export const createWebScrapeActionPort = (): ScrapeActionPort => ({
   },
   deleteFileAndFolder: async (filePath) => {
     void filePath;
-    throw new Error("Web 端暂不支持直接删除主机文件夹");
+    throw new Error("Web 端不支持删除服务器主机文件夹");
   },
   openFolder: () => undefined,
   play: () => undefined,

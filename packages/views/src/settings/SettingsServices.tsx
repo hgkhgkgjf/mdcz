@@ -58,8 +58,8 @@ export interface SettingsTranslateTestInput {
 export interface SettingsServices {
   browsePath: (kind: "file" | "directory", filters?: SettingsBrowseFilter[]) => Promise<SettingsBrowseResult>;
   getPathSuggestions?: (kind: "file" | "directory") => SettingsPathSuggestion[];
+  isServer?: boolean;
   suggestDirectoryPath?: (path: string) => Promise<PathAutocompleteResult>;
-  supportsPathBrowse?: boolean;
   watermarkDirectoryActionLabel?: string;
   checkCookies: () => Promise<SettingsCookieCheckResult>;
   ensureWatermarkDirectory: () => Promise<SettingsWatermarkDirectoryInfo>;
@@ -74,7 +74,7 @@ export interface SettingsServices {
   relaunchApp: () => Promise<void>;
   resetConfig: (path?: string) => Promise<unknown>;
   saveConfig: (config?: Partial<Configuration>) => Promise<unknown>;
-  testLlm: (input: SettingsTranslateTestInput) => Promise<{ success: boolean; message: string }>;
+  testLLM: (input: SettingsTranslateTestInput) => Promise<{ success: boolean; message: string }>;
   updateCurrentConfigCache?: (flatPayload: Record<string, unknown>) => void;
 }
 
