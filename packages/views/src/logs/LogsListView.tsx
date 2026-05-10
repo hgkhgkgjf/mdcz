@@ -1,37 +1,149 @@
 import type { LogEntryDto } from "@mdcz/shared/serverDtos";
-import { Badge } from "@mdcz/ui";
-import type { RefObject } from "react";
+import { cn } from "@mdcz/ui";
+import { CheckCircle2, CircleX, FileText, Globe2, Info, TriangleAlert } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 export interface LogsListViewProps {
+  autoScroll?: boolean;
   logs: LogEntryDto[];
   emptyText?: string;
-  endRef?: RefObject<HTMLDivElement | null>;
-  formatDate: (value: string) => string;
 }
 
-const badgeVariant = (level: string | undefined): "default" | "destructive" | "secondary" => {
-  if (level === "ERR") return "destructive";
-  if (level === "WARN" || level === "REQ") return "secondary";
-  return "default";
+type VisualLogLevel = "ok" | "warn" | "error" | "request" | "info";
+
+const typeLevelLabels: Record<string, LogEntryDto["level"]> = {
+  completed: "OK",
+  failed: "ERR",
+  "item-failed": "ERR",
+  "item-success": "OK",
+  paused: "WARN",
+  queued: "REQ",
+  running: "INFO",
+  stopping: "WARN",
 };
 
-export const LogsListView = ({ logs, emptyText = "暂无日志。", endRef, formatDate }: LogsListViewProps) => (
-  <div className="grid h-full overflow-auto rounded-[calc(var(--radius-quiet-xl)-0.35rem)] bg-surface-low/40">
-    {logs.map((log) => (
-      <div className="grid gap-1 border-t border-border/40 px-4 py-3 first:border-t-0" key={log.id}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={badgeVariant(log.level)}>{log.level ?? "INFO"}</Badge>
-            <Badge>{log.source}</Badge>
-            <Badge variant="secondary">{log.type}</Badge>
-            <span className="font-mono text-xs text-muted-foreground">{log.taskId}</span>
-          </div>
-          <span className="font-mono text-xs text-muted-foreground">{formatDate(log.createdAt)}</span>
+function formatTimestamp(timestamp: string): string {
+  try {
+    return new Date(timestamp).toLocaleTimeString("zh-CN", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch {
+    return timestamp;
+  }
+}
+
+function getVisualLogLevel(log: Pick<LogEntryDto, "level" | "message" | "type">): VisualLogLevel {
+  const level = log.level ?? typeLevelLabels[log.type] ?? "INFO";
+  if (level === "OK") return "ok";
+  if (level === "ERR") return "error";
+  if (level === "WARN") return "warn";
+  if (level === "REQ") return "request";
+
+  const message = log.message.toLowerCase();
+  if (message.includes("error") || message.includes("failed") || message.includes("失败")) return "error";
+  if (message.includes("warn") || message.includes("警告")) return "warn";
+  if (message.includes("request") || message.includes("fetch") || message.includes("请求")) return "request";
+  if (message.includes("success") || message.includes("completed") || message.includes("完成")) return "ok";
+  return "info";
+}
+
+function getLevelPresentation(level: VisualLogLevel) {
+  switch (level) {
+    case "ok":
+      return {
+        label: "OK",
+        Icon: CheckCircle2,
+        className: "text-emerald-600 dark:text-emerald-400",
+      };
+    case "warn":
+      return {
+        label: "WARN",
+        Icon: TriangleAlert,
+        className: "text-amber-600 dark:text-amber-400",
+      };
+    case "error":
+      return {
+        label: "ERR",
+        Icon: CircleX,
+        className: "text-rose-600 dark:text-rose-400",
+      };
+    case "request":
+      return {
+        label: "REQ",
+        Icon: Globe2,
+        className: "text-sky-600 dark:text-sky-400",
+      };
+    default:
+      return {
+        label: "INFO",
+        Icon: Info,
+        className: "text-sky-600 dark:text-sky-400",
+      };
+  }
+}
+
+export const LogsListView = ({ autoScroll = true, logs, emptyText = "暂无日志。" }: LogsListViewProps) => {
+  const endRef = useRef<HTMLDivElement | null>(null);
+  const logCount = logs.length;
+
+  useEffect(() => {
+    if (!autoScroll || logCount === 0) {
+      return;
+    }
+
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [autoScroll, logCount]);
+
+  if (logCount === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted-foreground/70">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-low text-muted-foreground/75">
+          <FileText className="h-6 w-6 stroke-[1.75]" />
         </div>
-        <p className="text-sm text-muted-foreground">{log.message}</p>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground/80">暂无相关日志内容</p>
+          <p className="text-xs text-muted-foreground">{emptyText}</p>
+        </div>
       </div>
-    ))}
-    {endRef && <div ref={endRef} />}
-    {logs.length === 0 && <div className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyText}</div>}
-  </div>
-);
+    );
+  }
+
+  return (
+    <div
+      className="h-full overflow-auto px-2 pb-2 font-mono text-[12.5px] sm:px-3 sm:pb-3"
+      style={{
+        overflowAnchor: "none",
+      }}
+    >
+      {logs.map((log, index) => {
+        const presentation = getLevelPresentation(getVisualLogLevel(log));
+
+        return (
+          <div key={log.id} data-index={index} className="px-1">
+            <div className="rounded-[var(--radius-quiet-sm)] px-3 py-2 transition-colors hover:bg-surface-low/85">
+              <div className="grid grid-cols-[64px_80px_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[74px_92px_minmax(0,1fr)] sm:gap-4">
+                <span className="pt-0.5 font-numeric text-[11px] text-muted-foreground sm:text-xs">
+                  {formatTimestamp(log.createdAt)}
+                </span>
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] sm:text-xs",
+                    presentation.className,
+                  )}
+                >
+                  <presentation.Icon className="h-3.5 w-3.5 shrink-0 stroke-[2.2]" />
+                  <span>{presentation.label}</span>
+                </span>
+                <div className="min-h-5 break-words whitespace-pre-wrap leading-6 text-foreground">{log.message}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div ref={endRef} />
+    </div>
+  );
+};

@@ -339,11 +339,11 @@ export class ScraperService {
       }
 
       for (const item of items) {
-        const outputPath = item.outputPath?.trim() || item.lastKnownPath?.trim();
-        if (!outputPath) {
+        const videoPath = item.lastKnownPath?.trim();
+        if (!videoPath) {
           continue;
         }
-        const rootRelativePath = this.toOutputRootRelativePath(outputRoot, outputPath) ?? outputPath;
+        const rootRelativePath = this.toOutputRootRelativePath(outputRoot, videoPath) ?? videoPath;
 
         await state.repositories.library.upsertEntry({
           mediaIdentity: item.crawlerData?.number ?? item.number,

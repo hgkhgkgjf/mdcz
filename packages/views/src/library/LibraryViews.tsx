@@ -35,13 +35,6 @@ export function LibraryIndexView({
   return (
     <main className={cn("h-full overflow-y-auto bg-surface-canvas text-foreground", className)}>
       <div className="mx-auto grid w-full max-w-[1600px] gap-7 px-6 py-8 lg:px-12 lg:py-12">
-        <header className="max-w-3xl">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">媒体库</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            浏览持久化媒体库索引，查看刮削元数据、文件引用和缺失路径状态。
-          </p>
-        </header>
-
         {errorMessage && (
           <div className="flex items-center gap-2 rounded-quiet border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="h-4 w-4" />

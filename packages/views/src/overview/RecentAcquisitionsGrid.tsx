@@ -10,7 +10,6 @@ export interface RecentAcquisitionViewItem {
   number: string;
   title: string | null;
   thumbnailPath: string | null;
-  available?: boolean | null;
 }
 
 export interface RecentAcquisitionsGridProps<TItem extends RecentAcquisitionViewItem = RecentAcquisitionViewItem> {
@@ -98,8 +97,7 @@ function AcquisitionCard<TItem extends RecentAcquisitionViewItem>({
 }: AcquisitionCardProps<TItem>) {
   const imageSrc = item.thumbnailPath ? getImageSrc(item.thumbnailPath) : "";
   const title = item.title?.trim() || item.number;
-  const actorText =
-    item.actors.filter(Boolean).join(" / ") || (item.available === false ? "文件已移动或删除" : "未知演员");
+  const actorText = item.actors.filter(Boolean).join(" / ") || "未知演员";
   const className = cn(
     "group relative aspect-[2/3] rounded-quiet-lg bg-surface-raised text-left shadow-none outline-none transition duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring",
   );

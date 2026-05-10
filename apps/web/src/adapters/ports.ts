@@ -9,6 +9,11 @@ import type {
 import type { DetailViewItem } from "@mdcz/views/detail";
 import { api } from "../client";
 
+const dedupeValues = (values: string[]): string[] =>
+  values
+    .map((value) => value.trim())
+    .filter((value, index, items) => value.length > 0 && items.indexOf(value) === index);
+
 const toRelativePath = (item: DetailViewItem, path: string): string => {
   const normalizedPath = path.replace(/\\/gu, "/");
   const itemPath = item.path?.replace(/\\/gu, "/") ?? "";
@@ -25,6 +30,7 @@ export const createWebDetailPort = (): DetailActionPort => ({
     openFolder: "hidden",
     openNfo: "enabled",
   },
+  resolveImageCandidates: async (candidates) => dedupeValues(candidates),
   play: () => undefined,
   openFolder: () => undefined,
   readNfo: async (item, path) => {

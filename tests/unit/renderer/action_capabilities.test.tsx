@@ -26,10 +26,18 @@ const nfo = {
   onDataChange: vi.fn(),
   onSave: vi.fn(),
 };
+const resolveImageCandidates = vi.fn(async (candidates: string[]) => candidates);
 
 describe("action capability rendering", () => {
   it("hides unsupported detail actions instead of rendering inert buttons", () => {
-    const html = renderToStaticMarkup(<DetailPanelView item={baseItem} nfo={nfo} onOpenNfo={() => undefined} />);
+    const html = renderToStaticMarkup(
+      <DetailPanelView
+        item={baseItem}
+        nfo={nfo}
+        onOpenNfo={() => undefined}
+        resolveImageCandidates={resolveImageCandidates}
+      />,
+    );
 
     expect(html).not.toContain("播放");
     expect(html).not.toContain("打开文件夹");
@@ -43,6 +51,7 @@ describe("action capability rendering", () => {
         openFolder: "hidden",
         openNfo: "enabled",
       },
+      resolveImageCandidates: vi.fn(async (candidates) => candidates),
       play: vi.fn(),
       openFolder: vi.fn(),
       readNfo: vi.fn(async () => ({ path: "ABC-001.nfo", crawlerData: null })),

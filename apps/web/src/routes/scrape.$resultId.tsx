@@ -28,18 +28,6 @@ export function ScrapeResultPage() {
         port={detailPort}
         item={detailItem}
         emptyMessage={detailQ.isLoading ? "加载中..." : "未找到刮削结果"}
-        renderSceneImages={({ images, label }) => (
-          <div className="space-y-3">
-            {label ? (
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/80">{label}</div>
-            ) : null}
-            <div className="flex gap-3 overflow-x-auto pb-1">
-              {images.map((src) => (
-                <img key={src} src={src} alt="剧照" className="h-28 w-auto rounded-quiet-sm object-cover" />
-              ))}
-            </div>
-          </div>
-        )}
       />
     </main>
   );

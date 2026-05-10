@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { ServiceContainer } from "@main/container";
 import { createOverviewHandlers } from "@main/ipc/handlers/overview";
 import { IpcChannel } from "@mdcz/shared/IpcChannel";
@@ -28,12 +29,16 @@ const actionArgs = { context: { sender: {} as never }, input: undefined };
 
 const createContext = (overrides: {
   listEntries?: ReturnType<typeof vi.fn>;
+  listRoots?: ReturnType<typeof vi.fn>;
   getSummary?: ReturnType<typeof vi.fn>;
 }): ServiceContainer =>
   ({
     persistenceService: {
       getState: vi.fn(async () => ({
         repositories: {
+          mediaRoots: {
+            list: overrides.listRoots ?? vi.fn(async () => []),
+          },
           library: {
             listEntries: overrides.listEntries ?? vi.fn(async () => []),
           },
@@ -48,21 +53,25 @@ const createContext = (overrides: {
 
 describe("createOverviewHandlers", () => {
   it("returns persisted library entries as recent acquisitions", async () => {
+    const rootPath = path.resolve("/persisted");
     const handlers = createOverviewHandlers(
       createContext({
+        listRoots: vi.fn(async () => [{ id: "root-1", hostPath: rootPath }]),
         listEntries: vi.fn(async () => [
           {
             id: "entry-1",
+            rootId: "root-1",
             number: "ABC-123",
             fileName: "ABC-123.mp4",
             title: "First",
             actors: ["Actor A"],
-            thumbnailPath: "/persisted/ABC-123.webp",
-            lastKnownPath: "/output/ABC-123.mp4",
+            thumbnailPath: "thumbs/ABC-123.webp",
+            lastKnownPath: "movies/ABC-123.mp4",
             indexedAt: new Date(1_700_000_000_000),
           },
           {
             id: "entry-2",
+            rootId: "root-1",
             number: "MISSING-1",
             fileName: "MISSING-1.mp4",
             title: null,
@@ -89,8 +98,8 @@ describe("createOverviewHandlers", () => {
           number: "ABC-123",
           title: "First",
           actors: ["Actor A"],
-          thumbnailPath: "/persisted/ABC-123.webp",
-          lastKnownPath: "/output/ABC-123.mp4",
+          thumbnailPath: path.resolve(rootPath, "thumbs/ABC-123.webp"),
+          lastKnownPath: path.resolve(rootPath, "movies/ABC-123.mp4"),
           completedAt: 1_700_000_000_000,
         },
       ],
@@ -120,21 +129,24 @@ describe("createOverviewHandlers", () => {
   });
 
   it("sorts and limits persisted recent acquisitions", async () => {
+    const rootPath = path.resolve("/persisted");
     const entries = Array.from({ length: 55 }, (_, index) => {
       const displayIndex = String(index).padStart(2, "0");
       return {
         id: `entry-${displayIndex}`,
+        rootId: "root-1",
         number: `ABC-${displayIndex}`,
         fileName: `ABC-${displayIndex}.mp4`,
         title: `Persisted ${displayIndex}`,
         actors: ["Actor P"],
-        thumbnailPath: `/persisted/thumb-${displayIndex}.png`,
-        lastKnownPath: `/persisted/ABC-${displayIndex}.mp4`,
+        thumbnailPath: `thumb-${displayIndex}.png`,
+        lastKnownPath: `ABC-${displayIndex}.mp4`,
         indexedAt: new Date(1_700_000_000_000 + index),
       };
     });
     const handlers = createOverviewHandlers(
       createContext({
+        listRoots: vi.fn(async () => [{ id: "root-1", hostPath: rootPath }]),
         listEntries: vi.fn(async () => entries),
       }),
     );
@@ -146,8 +158,8 @@ describe("createOverviewHandlers", () => {
       number: "ABC-54",
       title: "Persisted 54",
       actors: ["Actor P"],
-      thumbnailPath: "/persisted/thumb-54.png",
-      lastKnownPath: "/persisted/ABC-54.mp4",
+      thumbnailPath: path.resolve(rootPath, "thumb-54.png"),
+      lastKnownPath: path.resolve(rootPath, "ABC-54.mp4"),
       completedAt: 1_700_000_000_054,
     });
     expect(result.items.at(-1)?.number).toBe("ABC-05");

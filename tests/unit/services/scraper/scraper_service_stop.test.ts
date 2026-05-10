@@ -173,6 +173,8 @@ describe("ScraperService stop flow", () => {
     });
     const mediaFilePath = await createTempMediaFile("ABP-789.mp4");
     const outputVideoPath = join(outputRoot, "ABP-789.mp4");
+    const outputFolderPath = join(outputRoot, "ABP-789");
+    const posterPath = join(outputFolderPath, "poster.jpg");
 
     vi.spyOn(configManager, "ensureLoaded").mockResolvedValue(undefined);
     vi.spyOn(configManager, "get").mockResolvedValue(config);
@@ -198,10 +200,11 @@ describe("ScraperService stop flow", () => {
         website: config.scrape.sites[0],
       },
       assets: {
-        poster: "/output/ABP-789/poster.jpg",
+        poster: posterPath,
         sceneImages: [],
-        downloaded: ["/output/ABP-789/poster.jpg"],
+        downloaded: [posterPath],
       },
+      outputPath: outputFolderPath,
     });
 
     await service.startSingle([mediaFilePath]);
@@ -227,7 +230,7 @@ describe("ScraperService stop flow", () => {
         title: "ABP-789 title",
         number: "ABP-789",
         actors: ["Actor A"],
-        thumbnailPath: "/output/ABP-789/poster.jpg",
+        thumbnailPath: "ABP-789/poster.jpg",
         lastKnownPath: "ABP-789.mp4",
         indexedAt: expect.any(Date),
       }),

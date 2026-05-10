@@ -2,7 +2,7 @@ import { toErrorMessage } from "@mdcz/shared/error";
 import { LogsPanelView } from "@mdcz/views/logs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, subscribeTaskEvents } from "../client";
 import { ErrorBanner, formatDate } from "../routeCommon";
 
@@ -26,7 +26,6 @@ export const LogsPage = () => {
   });
   const [query, setQuery] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
-  const endRef = useRef<HTMLDivElement | null>(null);
   const clearRuntimeM = useMutation({
     mutationFn: () => api.logs.clearRuntime(),
     onSuccess: async () => {
@@ -58,19 +57,12 @@ export const LogsPage = () => {
     });
   }, [logsQ.data?.logs, query]);
 
-  useEffect(() => {
-    if (autoScroll) {
-      endRef.current?.scrollIntoView({ block: "end" });
-    }
-  });
-
   return (
     <main className="h-full overflow-hidden bg-surface-canvas">
       <div className="mx-auto flex h-full w-full max-w-[1240px] flex-col px-5 py-4 sm:px-6 md:px-8 lg:px-10 lg:py-5">
         <LogsPanelView
           autoScroll={autoScroll}
           emptyText={query ? "没有匹配的日志。" : "暂无日志。"}
-          endRef={endRef}
           error={logsQ.error ? <ErrorBanner>{toErrorMessage(logsQ.error)}</ErrorBanner> : undefined}
           formatDate={formatDate}
           kind="all"

@@ -33,9 +33,7 @@ export const LogsPanelView = ({
   query,
   autoScroll,
   emptyText,
-  endRef,
   error,
-  formatDate,
   onAutoScrollChange,
   onClearRuntime,
   onQueryChange,
@@ -83,7 +81,7 @@ export const LogsPanelView = ({
     {error}
     <section className="flex min-h-0 flex-1 flex-col rounded-[var(--radius-quiet-xl)] border border-border/50 bg-surface-floating/96 p-1.5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.42)] sm:p-2">
       <div className="min-h-0 flex-1">
-        <LogsListView emptyText={emptyText} endRef={endRef} formatDate={formatDate} logs={logs} />
+        <LogsListView autoScroll={autoScroll} emptyText={emptyText} logs={logs} />
       </div>
     </section>
   </div>

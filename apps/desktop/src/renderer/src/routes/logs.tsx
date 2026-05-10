@@ -12,7 +12,7 @@ import {
 } from "@mdcz/ui";
 import { type LogsKindFilter, type LogsLevelFilter, LogsPanelView } from "@mdcz/views/logs";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   getRuntimeLogSearchText,
@@ -39,7 +39,6 @@ function LogsComponent() {
   const [kind, setKind] = useState<LogsKindFilter>("all");
   const [level, setLevel] = useState<LogsLevelFilter>("all");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const endRef = useRef<HTMLDivElement | null>(null);
   const logEntries = useMemo<LogEntryDto[]>(
     () =>
       logs.map((log) => {
@@ -67,19 +66,12 @@ function LogsComponent() {
     });
   }, [kind, level, logEntries, logs, query]);
 
-  useEffect(() => {
-    if (autoScroll) {
-      endRef.current?.scrollIntoView({ block: "end" });
-    }
-  });
-
   return (
     <main className="h-full overflow-y-auto bg-surface-canvas text-foreground">
       <div className="mx-auto grid w-full max-w-[1240px] gap-7 px-6 py-8 lg:px-10 lg:py-10">
         <LogsPanelView
           autoScroll={autoScroll}
           emptyText={query ? "没有匹配的日志。" : "暂无日志。刮削或维护任务开始后，运行日志会显示在这里。"}
-          endRef={endRef}
           formatDate={(value) => new Date(value).toLocaleString()}
           kind={kind}
           level={level}

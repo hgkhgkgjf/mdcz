@@ -3,9 +3,11 @@ import { useScrapeStore } from "@mdcz/shared/stores/scrapeStore";
 import { useUIStore } from "@mdcz/shared/stores/uiStore";
 import type { CrawlerData } from "@mdcz/shared/types";
 import { findScrapeResultGroup } from "@mdcz/shared/viewModels/scrapeResultGrouping";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { type DetailPanelCompareProps, DetailPanelView, toDetailViewItemFromScrapeResult } from "../detail";
+import { buildDetailArtworkCandidates } from "../detail/imageCandidates";
+import type { DetailViewItem } from "../detail/types";
 import {
   createEmptyEditableNfoData,
   type EditableNfoData,
@@ -20,17 +22,72 @@ const EMPTY_RESULTS: ReturnType<typeof useScrapeStore.getState>["results"] = [];
 
 const isActionVisible = (availability: ActionAvailability | undefined) => availability !== "hidden";
 
+const getDirFromPath = (path: string): string => {
+  const normalized = path.replace(/[\\/]+$/u, "");
+  const index = Math.max(normalized.lastIndexOf("/"), normalized.lastIndexOf("\\"));
+  return index >= 0 ? normalized.slice(0, index) : "";
+};
+
+const buildCandidateKey = (candidates: string[]): string => candidates.join("\u0000");
+const readCandidateKey = (key: string): string[] => (key ? key.split("\u0000") : []);
+
+function useResolvedArtworkSources(item: DetailViewItem | null, port: DetailActionPort) {
+  const candidates = useMemo(() => buildDetailArtworkCandidates(item), [item]);
+  const posterCandidateKey = buildCandidateKey(candidates.poster);
+  const thumbCandidateKey = buildCandidateKey(candidates.thumb);
+  const baseDir = item?.outputPath ?? (item?.path ? getDirFromPath(item.path) : undefined);
+  const [posterSources, setPosterSources] = useState<string[]>([]);
+  const [thumbSources, setThumbSources] = useState<string[]>([]);
+  const [posterIndex, setPosterIndex] = useState(0);
+  const [thumbIndex, setThumbIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const posterCandidates = readCandidateKey(posterCandidateKey);
+    const thumbCandidates = readCandidateKey(thumbCandidateKey);
+    setPosterIndex(0);
+    setThumbIndex(0);
+
+    const resolveSources = async () => {
+      const [nextPosterSources, nextThumbSources] = await Promise.all([
+        port.resolveImageCandidates(posterCandidates, baseDir),
+        port.resolveImageCandidates(thumbCandidates, baseDir),
+      ]);
+
+      if (!cancelled) {
+        setPosterSources(nextPosterSources);
+        setThumbSources(nextThumbSources);
+      }
+    };
+
+    void resolveSources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseDir, posterCandidateKey, thumbCandidateKey, port]);
+
+  const handlePosterError = useCallback(() => {
+    setPosterIndex((currentIndex) => Math.min(currentIndex + 1, posterSources.length));
+  }, [posterSources.length]);
+
+  const handleThumbError = useCallback(() => {
+    setThumbIndex((currentIndex) => Math.min(currentIndex + 1, thumbSources.length));
+  }, [thumbSources.length]);
+
+  return {
+    posterSrc: posterSources[posterIndex] ?? "",
+    thumbSrc: thumbSources[thumbIndex] ?? "",
+    handlePosterError,
+    handleThumbError,
+  };
+}
+
 interface DetailPanelProps {
   port: DetailActionPort;
-  item?: import("@mdcz/views/detail").DetailViewItem | null;
+  item?: DetailViewItem | null;
   emptyMessage?: string;
   compare?: DetailPanelCompareProps;
-  renderSceneImages?: (props: {
-    images: string[];
-    baseDir?: string;
-    label?: string;
-    variant?: "compact" | "filmstrip";
-  }) => ReactNode;
 }
 
 export function DetailPanelAdapter({
@@ -38,7 +95,6 @@ export function DetailPanelAdapter({
   item: explicitItem,
   emptyMessage = "请选择一个项目以查看详情",
   compare,
-  renderSceneImages,
 }: DetailPanelProps) {
   const results = useScrapeStore((state) => (explicitItem === undefined ? state.results : EMPTY_RESULTS));
   const selectedResultId = useUIStore((state) => (explicitItem === undefined ? state.selectedResultId : null));
@@ -53,6 +109,7 @@ export function DetailPanelAdapter({
           })(),
     [explicitItem, results, selectedResultId],
   );
+  const artwork = useResolvedArtworkSources(compare ? null : item, port);
 
   const [nfoOpen, setNfoOpenRaw] = useState(false);
   const [nfoPath, setNfoPath] = useState("");
@@ -181,8 +238,8 @@ export function DetailPanelAdapter({
       item={item}
       emptyMessage={emptyMessage}
       compare={compare}
-      posterSrc={item?.posterUrl ?? ""}
-      thumbSrc={item?.thumbUrl ?? item?.fanartUrl ?? ""}
+      posterSrc={artwork.posterSrc}
+      thumbSrc={artwork.thumbSrc}
       nfo={{
         open: nfoOpen,
         data: nfoData,
@@ -197,7 +254,9 @@ export function DetailPanelAdapter({
       onPlay={actions.play}
       onOpenFolder={actions.openFolder}
       onOpenNfo={actions.openNfo}
-      renderSceneImages={renderSceneImages}
+      onPosterError={artwork.handlePosterError}
+      onThumbError={artwork.handleThumbError}
+      resolveImageCandidates={port.resolveImageCandidates}
     />
   );
 }

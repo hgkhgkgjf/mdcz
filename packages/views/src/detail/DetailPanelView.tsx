@@ -1,10 +1,11 @@
 import type { FieldDiff, LocalScanEntry, MaintenanceItemResult, MaintenancePreviewItem } from "@mdcz/shared/types";
 import { Badge, Button, Dialog, DialogContent, DialogDescription, DialogTitle, ScrollArea } from "@mdcz/ui";
 import { FileText, FolderOpen, GitCompareArrows, ImageIcon, MousePointerClick, Play, Star, X } from "lucide-react";
-import { type Dispatch, type ReactNode, type SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 import { ChangeDiffView, type MaintenanceFieldSelectionSide, PathPlanView } from "../maintenance";
 import { type EditableNfoData, NfoEditorDialog, type NfoValidationErrors } from "../nfo";
 import { formatBitrate, formatDuration } from "./detailViewAdapters";
+import { type ResolveImageCandidates, SceneImageGallery } from "./SceneImageGallery";
 import type { DetailViewItem } from "./types";
 
 export interface DetailPanelCompareProps {
@@ -41,12 +42,7 @@ export interface DetailPanelViewProps {
   onOpenNfo?: () => void;
   onPosterError?: () => void;
   onThumbError?: () => void;
-  renderSceneImages?: (props: {
-    images: string[];
-    baseDir?: string;
-    label?: string;
-    variant?: "compact" | "filmstrip";
-  }) => ReactNode;
+  resolveImageCandidates: ResolveImageCandidates;
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -155,7 +151,7 @@ export function DetailPanelView({
   onOpenNfo,
   onPosterError,
   onThumbError,
-  renderSceneImages,
+  resolveImageCandidates,
 }: DetailPanelViewProps) {
   const [thumbPreviewOpen, setThumbPreviewOpen] = useState(false);
 
@@ -368,14 +364,15 @@ export function DetailPanelView({
                   </section>
                 ) : null}
 
-                {item.sceneImages && item.sceneImages.length > 0 && renderSceneImages ? (
+                {item.sceneImages && item.sceneImages.length > 0 ? (
                   <section className="space-y-3">
-                    {renderSceneImages({
-                      images: item.sceneImages,
-                      baseDir: item.outputPath ?? (item.path ? getDirFromPath(item.path) : undefined),
-                      label: "剧照",
-                      variant: "filmstrip",
-                    })}
+                    <SceneImageGallery
+                      images={item.sceneImages}
+                      baseDir={item.outputPath ?? (item.path ? getDirFromPath(item.path) : undefined)}
+                      label="剧照"
+                      resolveImageCandidates={resolveImageCandidates}
+                      variant="filmstrip"
+                    />
                   </section>
                 ) : null}
 

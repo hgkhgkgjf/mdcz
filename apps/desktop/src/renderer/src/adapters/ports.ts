@@ -8,8 +8,31 @@ import type {
 import type { DetailViewItem } from "@mdcz/views/detail";
 import { deleteFile, deleteFileAndFolder, readNfo, retryScrapeSelection, updateNfo } from "@/api/manual";
 import { ipc } from "@/client/ipc";
+import { getImageSrc, getLocalImagePath, resolveImagePath } from "@/utils/image";
 import { getDirFromPath } from "@/utils/path";
 import { playMediaPath } from "@/utils/playback";
+
+const dedupeValues = (values: string[]): string[] =>
+  values.filter((value, index, items) => value.length > 0 && items.indexOf(value) === index);
+
+export const resolveDesktopImageCandidates = async (candidates: string[], baseDir?: string): Promise<string[]> =>
+  dedupeValues(
+    await Promise.all(
+      candidates.map(async (candidate) => {
+        const localPath = getLocalImagePath(candidate, baseDir);
+        if (localPath) {
+          try {
+            const { exists } = await ipc.file.exists(localPath);
+            return exists ? getImageSrc(localPath) : "";
+          } catch {
+            return "";
+          }
+        }
+
+        return getImageSrc(resolveImagePath(candidate, baseDir));
+      }),
+    ),
+  );
 
 export const createDesktopDetailPort = (): DetailActionPort => ({
   capabilities: {
@@ -17,6 +40,7 @@ export const createDesktopDetailPort = (): DetailActionPort => ({
     openFolder: "enabled",
     openNfo: "enabled",
   },
+  resolveImageCandidates: resolveDesktopImageCandidates,
   play: (item) => {
     if (!item.path) {
       return;

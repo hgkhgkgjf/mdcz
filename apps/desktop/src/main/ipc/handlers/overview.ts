@@ -1,6 +1,7 @@
 import type { ServiceContainer } from "@main/container";
 import { loggerService } from "@main/services/LoggerService";
 import { toErrorMessage } from "@main/utils/common";
+import { type MediaRoot, resolveRootRelativePath } from "@mdcz/media-store";
 import { sortAndLimitRecentAcquisitions, toRuntimeRecentAcquisition } from "@mdcz/runtime/library";
 import { IpcChannel } from "@mdcz/shared/IpcChannel";
 import type { OverviewRecentAcquisitionItem } from "@mdcz/shared/ipc-contracts/overviewContract";
@@ -8,6 +9,27 @@ import type { IpcRouterContract } from "@mdcz/shared/ipcContract";
 import { asSerializableIpcError, t } from "../shared";
 
 const logger = loggerService.getLogger("IpcRouter:overview");
+
+const isRemotePath = (value: string): boolean => /^https?:\/\//iu.test(value.trim());
+const isAbsoluteLocalPath = (value: string): boolean =>
+  /^[A-Za-z]:[\\/]/u.test(value) || value.startsWith("/") || value.startsWith("\\\\") || value.startsWith("//");
+
+const resolveLibraryPath = (
+  rootMap: ReadonlyMap<string, MediaRoot>,
+  rootId: string | undefined,
+  value: string | null | undefined,
+): string | null => {
+  const path = value?.trim();
+  if (!path) {
+    return null;
+  }
+  if (isRemotePath(path) || isAbsoluteLocalPath(path)) {
+    return path;
+  }
+
+  const root = rootId ? rootMap.get(rootId) : undefined;
+  return root ? resolveRootRelativePath(root, path) : path;
+};
 
 export const createOverviewHandlers = (
   context: ServiceContainer,
@@ -39,7 +61,12 @@ export const createOverviewHandlers = (
 
 const readPersistedRecentAcquisitions = async (context: ServiceContainer): Promise<OverviewRecentAcquisitionItem[]> => {
   const state = await context.persistenceService.getState();
-  const entries = await state.repositories.library.listEntries();
+  const [roots, entries] = await Promise.all([
+    state.repositories.mediaRoots.list(),
+    state.repositories.library.listEntries(),
+  ]);
+  const rootMap = new Map(roots.map((root) => [root.id, root]));
+  const entryById = new Map(entries.map((entry) => [entry.id, entry]));
   const recent = sortAndLimitRecentAcquisitions(
     entries
       .map((entry) =>
@@ -61,8 +88,8 @@ const readPersistedRecentAcquisitions = async (context: ServiceContainer): Promi
     number: record.number,
     title: record.title,
     actors: record.actors,
-    thumbnailPath: record.thumbnailPath ? record.thumbnailPath : null,
-    lastKnownPath: record.lastKnownPath,
+    thumbnailPath: resolveLibraryPath(rootMap, entryById.get(record.id ?? "")?.rootId, record.thumbnailPath),
+    lastKnownPath: resolveLibraryPath(rootMap, entryById.get(record.id ?? "")?.rootId, record.lastKnownPath),
     completedAt: record.completedAt,
   }));
 };
