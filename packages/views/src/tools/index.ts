@@ -5,3 +5,4 @@ export {
   ToolField,
   ToolShell,
 } from "./ToolScaffold";
+export { ToolsRouteView, type ToolsRouteViewProps } from "./ToolsRouteView";

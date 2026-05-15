@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@mdcz/ui";
-import { type LogsKindFilter, type LogsLevelFilter, LogsPanelView } from "@mdcz/views/logs";
+import { LogsPanelView } from "@mdcz/views/logs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -36,8 +36,6 @@ function LogsComponent() {
   const { logs, clearLogs } = useLogStore();
   const [autoScroll, setAutoScroll] = useState(true);
   const [query, setQuery] = useState("");
-  const [kind, setKind] = useState<LogsKindFilter>("all");
-  const [level, setLevel] = useState<LogsLevelFilter>("all");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const logEntries = useMemo<LogEntryDto[]>(
     () =>
@@ -58,13 +56,12 @@ function LogsComponent() {
 
   const filteredLogs = useMemo(() => {
     const normalizedFilter = query.trim().toLowerCase();
-    return logEntries.filter((log, index) => {
-      if (kind !== "all" && kind !== "runtime") return false;
-      if (level !== "all" && log.level !== level) return false;
-      if (!normalizedFilter) return true;
-      return getRuntimeLogSearchText(logs[index]).includes(normalizedFilter);
-    });
-  }, [kind, level, logEntries, logs, query]);
+    if (!normalizedFilter) return logEntries;
+    const matchingIds = new Set(
+      logs.filter((log) => getRuntimeLogSearchText(log).includes(normalizedFilter)).map((log) => log.id),
+    );
+    return logEntries.filter((log) => matchingIds.has(log.id));
+  }, [logEntries, logs, query]);
 
   return (
     <main className="h-full overflow-y-auto bg-surface-canvas text-foreground">
@@ -72,22 +69,14 @@ function LogsComponent() {
         <LogsPanelView
           autoScroll={autoScroll}
           emptyText={query ? "没有匹配的日志。" : "暂无日志。刮削或维护任务开始后，运行日志会显示在这里。"}
-          formatDate={(value) => new Date(value).toLocaleString()}
-          kind={kind}
-          level={level}
           logs={filteredLogs}
           query={query}
-          total={logEntries.length}
           onAutoScrollChange={(nextValue) => {
             setAutoScroll(nextValue);
             toast.info(nextValue ? "已开启自动滚动" : "已关闭自动滚动");
           }}
-          onClearSearch={() => setQuery("")}
           onClearRuntime={() => setIsClearDialogOpen(true)}
-          onKindChange={setKind}
-          onLevelChange={setLevel}
           onQueryChange={setQuery}
-          onRefresh={() => undefined}
         />
         <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
           <DialogContent className="max-w-md gap-5 rounded-[var(--radius-quiet-xl)] border border-border/50 bg-surface-floating p-6 shadow-[0_28px_90px_-44px_rgba(15,23,42,0.45)]">

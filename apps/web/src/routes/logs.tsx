@@ -11,13 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@mdcz/ui";
-import { type LogsKindFilter, type LogsLevelFilter, LogsPanelView } from "@mdcz/views/logs";
+import { LogsPanelView } from "@mdcz/views/logs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, subscribeTaskEvents } from "../client";
-import { ErrorBanner, formatDate } from "../routeCommon";
+import { ErrorBanner } from "../routeCommon";
 
 export const LogsPage = () => {
   const queryClient = useQueryClient();
@@ -27,15 +27,13 @@ export const LogsPage = () => {
   }, [activeMaintenanceTaskId, activeScrapeTaskId]);
   const [query, setQuery] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
-  const [kind, setKind] = useState<LogsKindFilter>("all");
-  const [level, setLevel] = useState<LogsLevelFilter>("all");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const logsQueryKey = useMemo(() => ["logs", kind, activeTaskIds] as const, [activeTaskIds, kind]);
+  const logsQueryKey = useMemo(() => ["logs", activeTaskIds] as const, [activeTaskIds]);
   const logsQ = useQuery({
     queryKey: logsQueryKey,
     queryFn: () =>
       api.logs.list({
-        kind,
+        kind: "all",
         ...(activeTaskIds.length > 0 ? { taskIds: activeTaskIds } : {}),
       }),
     retry: false,
@@ -53,9 +51,6 @@ export const LogsPage = () => {
     () =>
       subscribeTaskEvents((event) => {
         if (event.kind !== "log") return;
-        if (kind !== "all" && event.log.source !== kind) {
-          return;
-        }
         if (activeTaskIds.length > 0 && event.log.source === "task" && !activeTaskIds.includes(event.log.taskId)) {
           return;
         }
@@ -65,7 +60,7 @@ export const LogsPage = () => {
           return { logs: [...previous.logs, event.log] };
         });
       }),
-    [activeTaskIds, kind, logsQueryKey, queryClient],
+    [activeTaskIds, logsQueryKey, queryClient],
   );
   const filteredLogs = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -73,12 +68,10 @@ export const LogsPage = () => {
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
       .map((log) => ({ ...log, level: projectLogEntryLevel(log) }));
     return logs.filter((log) => {
-      if (kind !== "all" && log.source !== kind) return false;
-      if (level !== "all" && log.level !== level) return false;
       if (!normalized) return true;
       return getLogSearchText(log).includes(normalized);
     });
-  }, [kind, level, logsQ.data?.logs, query]);
+  }, [logsQ.data?.logs, query]);
 
   return (
     <main className="h-full overflow-hidden bg-surface-canvas">
@@ -87,22 +80,14 @@ export const LogsPage = () => {
           autoScroll={autoScroll}
           emptyText={query ? "没有匹配的日志。" : "暂无日志。刮削或维护任务开始后，运行日志会显示在这里。"}
           error={logsQ.error ? <ErrorBanner>{toErrorMessage(logsQ.error)}</ErrorBanner> : undefined}
-          formatDate={formatDate}
-          kind={kind}
-          level={level}
           logs={filteredLogs}
           query={query}
-          total={logsQ.data?.logs.length ?? 0}
           onAutoScrollChange={(nextValue) => {
             setAutoScroll(nextValue);
             toast.info(nextValue ? "已开启自动滚动" : "已关闭自动滚动");
           }}
-          onClearSearch={() => setQuery("")}
           onClearRuntime={() => setIsClearDialogOpen(true)}
-          onKindChange={setKind}
-          onLevelChange={setLevel}
           onQueryChange={setQuery}
-          onRefresh={() => void logsQ.refetch()}
         />
         <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
           <DialogContent className="max-w-md gap-5 rounded-[var(--radius-quiet-xl)] border border-border/50 bg-surface-floating p-6 shadow-[0_28px_90px_-44px_rgba(15,23,42,0.45)]">

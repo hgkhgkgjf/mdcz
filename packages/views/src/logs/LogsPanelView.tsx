@@ -1,31 +1,18 @@
 import type { LogEntryDto } from "@mdcz/shared/serverDtos";
 import { Button, cn, Input } from "@mdcz/ui";
 import { ArrowDownToLine, Eraser, Search } from "lucide-react";
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode } from "react";
 import { LogsListView } from "./LogsListView";
-
-export type LogsKindFilter = "all" | "task" | "runtime";
-export type LogsLevelFilter = "all" | "OK" | "WARN" | "ERR" | "REQ" | "INFO";
 
 export interface LogsPanelViewProps {
   logs: LogEntryDto[];
-  total: number;
   query: string;
-  kind: LogsKindFilter;
-  level: LogsLevelFilter;
   autoScroll: boolean;
   emptyText: string;
-  endRef?: RefObject<HTMLDivElement | null>;
   error?: ReactNode;
-  formatDate: (value: string) => string;
-  link?: ReactNode;
   onAutoScrollChange: (value: boolean) => void;
-  onClearSearch: () => void;
   onClearRuntime?: () => void;
-  onKindChange: (value: LogsKindFilter) => void;
-  onLevelChange: (value: LogsLevelFilter) => void;
   onQueryChange: (value: string) => void;
-  onRefresh: () => void;
 }
 
 export const LogsPanelView = ({
