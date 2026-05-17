@@ -1,9 +1,9 @@
 import { toErrorMessage } from "@mdcz/shared/error";
+import { Button, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, PasswordInput } from "@mdcz/ui";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { api } from "../../client";
 import { ErrorBanner } from "../../routeCommon";
-import { Button, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, PasswordInput } from "../../ui";
 
 export const LoginPage = ({ nextPath = "/" }: { nextPath?: string }) => {
   const [error, setError] = useState<string | null>(null);

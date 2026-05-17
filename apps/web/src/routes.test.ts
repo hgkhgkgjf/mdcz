@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DESKTOP_ROUTE_DEFINITIONS } from "@mdcz/shared/desktopNavigation";
@@ -115,10 +115,7 @@ describe("route helpers", () => {
     ]);
   });
 
-  it("keeps WebUI primitive exports free of fabricated layout wrappers", async () => {
-    const uiSource = await readFile(join(WEB_SRC_DIR, "ui.tsx"), "utf8");
-
-    expect(uiSource.trim()).toBe('export * from "@mdcz/ui";');
-    expect(uiSource).not.toMatch(/\b(Page|Panel|Field)\b/u);
+  it("does not keep a WebUI primitive compatibility wrapper", () => {
+    expect(existsSync(join(WEB_SRC_DIR, "ui.tsx"))).toBe(false);
   });
 });

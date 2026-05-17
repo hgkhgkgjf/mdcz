@@ -80,8 +80,6 @@ export function DesktopWorkbenchRoute({ routeIntent }: { routeIntent?: "maintena
     [results],
   );
   const sessionSnapshot = useWorkbenchSessionSnapshot(workbenchMode, routeIntent);
-  const scrapeHasWork = sessionSnapshot.scrapeHasWork;
-  const maintenanceHasWork = sessionSnapshot.maintenanceHasWork;
   const showSetup = sessionSnapshot.showSetup;
 
   // Detect scrape completion and check for ambiguous uncensored items
@@ -96,22 +94,10 @@ export function DesktopWorkbenchRoute({ routeIntent }: { routeIntent?: "maintena
   }, [ambiguousItems, scrapeStatus]);
 
   useEffect(() => {
-    if (routeIntent === "maintenance") {
-      if (!isScraping) {
-        setWorkbenchMode("maintenance");
-      }
-      return;
+    if (sessionSnapshot.workbenchMode !== workbenchMode) {
+      setWorkbenchMode(sessionSnapshot.workbenchMode);
     }
-
-    if (maintenanceHasWork && !scrapeHasWork) {
-      setWorkbenchMode("maintenance");
-      return;
-    }
-
-    if (!maintenanceHasWork && (!scrapeHasWork || workbenchMode === "maintenance")) {
-      setWorkbenchMode("scrape");
-    }
-  }, [isScraping, maintenanceHasWork, routeIntent, scrapeHasWork, setWorkbenchMode, workbenchMode]);
+  }, [sessionSnapshot.workbenchMode, setWorkbenchMode, workbenchMode]);
 
   const refreshCurrentConfig = async () => {
     await queryClient.invalidateQueries({ queryKey: CURRENT_CONFIG_QUERY_KEY });

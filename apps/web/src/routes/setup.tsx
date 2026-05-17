@@ -1,10 +1,4 @@
 import { toErrorMessage } from "@mdcz/shared/error";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { api } from "../client";
-import { ErrorBanner } from "../routeCommon";
 import {
   Button,
   Card,
@@ -21,7 +15,13 @@ import {
   Input,
   PasswordInput,
   Progress,
-} from "../ui";
+} from "@mdcz/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { api } from "../client";
+import { ErrorBanner } from "../routeCommon";
 
 // Web-only route: setup is the server first-run wizard for admin auth and mounted media-root registration.
 // Desktop persists local settings directly and has no browser-accessible first-run/auth boundary.
