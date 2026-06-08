@@ -46,6 +46,9 @@ extraResources:
 win:
   executableName: MDCz
   target:
+    - target: nsis
+      arch:
+        - x64
     - target: portable
       arch:
         - x64
@@ -62,10 +65,19 @@ mac:
       arch:
         - x64
         - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
   files:
     - "!**/node_modules/@img/sharp-{win32,linux,linuxmusl}-*/**"
     - "!**/node_modules/@img/sharp-libvips-{linux,linuxmusl,win32}-*/**"
     - "!**/node_modules/impit-{win32,linux}-*/**"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
 
 linux:
   category: Utility
