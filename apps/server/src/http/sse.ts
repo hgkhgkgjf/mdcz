@@ -1,9 +1,15 @@
 import type { ServerResponse } from "node:http";
 import type { ServerServices } from "../services";
 import { formatSseEvent } from "../taskEvents";
+import { buildCorsHeaders } from "./cors";
 
-export async function writeTaskEventsStream(services: ServerServices, raw: ServerResponse): Promise<void> {
+export async function writeTaskEventsStream(
+  services: ServerServices,
+  raw: ServerResponse,
+  origin?: string,
+): Promise<void> {
   raw.writeHead(200, {
+    ...buildCorsHeaders(origin),
     "cache-control": "no-cache, no-transform",
     connection: "keep-alive",
     "content-type": "text/event-stream; charset=utf-8",

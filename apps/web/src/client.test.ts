@@ -48,7 +48,7 @@ describe("web api client", () => {
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:3838/trpc/config.read");
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("POST");
-    expect(fetchMock.mock.calls[0]?.[1]?.body).toBeUndefined();
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({});
     expect(fetchMock.mock.calls[1]?.[0]).toBe("http://127.0.0.1:3838/trpc/config.reset");
     expect(fetchMock.mock.calls[1]?.[1]?.method).toBe("POST");
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({});

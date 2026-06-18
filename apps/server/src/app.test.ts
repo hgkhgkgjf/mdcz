@@ -500,6 +500,12 @@ describe("buildServer", () => {
       url: "/trpc/config.read",
       headers: { authorization: `Bearer ${token}` },
     });
+    const readPostResponse = await fastify.inject({
+      method: "POST",
+      url: "/trpc/config.read",
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
     const exportResponse = await fastify.inject({
       method: "GET",
       url: "/trpc/config.export",
@@ -508,6 +514,8 @@ describe("buildServer", () => {
 
     expect(readResponse.statusCode).toBe(200);
     expect(readResponse.json().result.data.network.timeout).toBe(defaultConfiguration.network.timeout);
+    expect(readPostResponse.statusCode).toBe(200);
+    expect(readPostResponse.json().result.data.network.timeout).toBe(defaultConfiguration.network.timeout);
     expect(exportResponse.statusCode).toBe(200);
     expect(exportResponse.json().result.data).toContain("[network]");
   });
@@ -2106,11 +2114,14 @@ describe("buildServer", () => {
     const address = await fastify.listen({ host: "127.0.0.1", port: 0 });
     const abortController = new AbortController();
     const response = await fetch(`${address}/events/tasks?token=${encodeURIComponent(token)}`, {
+      headers: { origin: "http://127.0.0.1:5173" },
       signal: abortController.signal,
     });
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(response.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:5173");
+    expect(response.headers.get("vary")).toBe("Origin");
     expect(response.body).not.toBeNull();
 
     const reader = response.body?.getReader();
