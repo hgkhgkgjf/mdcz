@@ -1,13 +1,16 @@
 import { toErrorMessage } from "@mdcz/shared/error";
 import { Button, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, PasswordInput } from "@mdcz/ui";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { api } from "../../client";
+import { queryKeys } from "../../lib/queryKeys";
 import { ErrorBanner } from "../../routeCommon";
 
 export const LoginPage = ({ nextPath = "/" }: { nextPath?: string }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -22,6 +25,7 @@ export const LoginPage = ({ nextPath = "/" }: { nextPath?: string }) => {
     setIsPending(true);
     try {
       await api.auth.login({ password: values.password });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.auth.status });
       await navigate({ to: nextPath, replace: true });
     } catch (err) {
       setError(toErrorMessage(err));

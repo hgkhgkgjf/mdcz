@@ -49,7 +49,7 @@ export class AuthService {
   async login(password: string): Promise<AuthSessionDto> {
     const state = await this.loadState();
     if (!safeEquals(password, this.currentAdminPassword(state))) {
-      throw new Error("Invalid admin password");
+      throw new Error("管理员密码错误");
     }
 
     const token = randomBytes(24).toString("base64url");

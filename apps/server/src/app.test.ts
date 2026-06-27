@@ -377,6 +377,19 @@ describe("buildServer", () => {
     });
   });
 
+  it("returns a localized error for invalid admin login", async () => {
+    const { fastify } = await createTestServer();
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/trpc/auth.login",
+      payload: { password: "wrong-password" },
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json().error.message).toContain("管理员密码错误");
+  });
+
   it("exposes server and Web build metadata through system.about", async () => {
     const { fastify } = await createTestServer();
     const loginResponse = await fastify.inject({

@@ -23,7 +23,7 @@ import {
 } from "@mdcz/views/tools";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import { api } from "../../client";
+import { api, getLibraryAssetSrc } from "../../client";
 import { queryKeys } from "../../lib/queryKeys";
 import { AppLink, ErrorBanner } from "../../routeCommon";
 import {
@@ -32,6 +32,42 @@ import {
   toMediaServerCheckResult,
   toRunState,
 } from "../toolsController";
+
+const isRemoteImageCandidate = (value: string): boolean => /^(?:https?:\/\/|data:|blob:)/iu.test(value.trim());
+
+const normalizePath = (value: string): string => value.trim().replace(/\\/gu, "/").replace(/\/+$/u, "");
+
+const resolveToolImageCandidates = (candidates: string[], roots: Array<{ hostPath: string; id: string }>): string[] => {
+  const normalizedRoots = roots
+    .map((root) => ({ ...root, hostPath: normalizePath(root.hostPath) }))
+    .filter((root) => root.id.trim().length > 0 && root.hostPath.length > 0)
+    .sort((left, right) => right.hostPath.length - left.hostPath.length);
+
+  return candidates
+    .map((candidate) => {
+      const trimmed = candidate.trim();
+      if (!trimmed) {
+        return "";
+      }
+      if (isRemoteImageCandidate(trimmed)) {
+        return trimmed;
+      }
+
+      const normalizedCandidate = normalizePath(trimmed);
+      const root = normalizedRoots.find(
+        (candidateRoot) =>
+          normalizedCandidate === candidateRoot.hostPath ||
+          normalizedCandidate.startsWith(`${candidateRoot.hostPath}/`),
+      );
+      if (!root) {
+        return "";
+      }
+
+      const relativePath = normalizedCandidate.slice(root.hostPath.length).replace(/^\/+/u, "");
+      return getLibraryAssetSrc({ rootId: root.id, path: relativePath });
+    })
+    .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+};
 
 export const ToolDetail = ({ toolId }: { toolId: ToolId }) => {
   const queryClient = useQueryClient();
@@ -78,6 +114,10 @@ export const ToolDetail = ({ toolId }: { toolId: ToolId }) => {
     });
     return response.data as AmazonPosterLookupResult;
   }, []);
+  const resolveAmazonPosterImageCandidates = useCallback(
+    async (candidates: string[]) => resolveToolImageCandidates(candidates, roots),
+    [roots],
+  );
 
   return (
     <ToolDetailShell toolId={toolId}>
@@ -247,6 +287,7 @@ export const ToolDetail = ({ toolId }: { toolId: ToolId }) => {
           }}
           onDialogOpenChange={setAmazonDialogOpen}
           onLookup={lookupAmazonPoster}
+          resolveImageCandidates={resolveAmazonPosterImageCandidates}
           onScan={async (rootDir) => {
             const response = await executeM.mutateAsync({ toolId, action: "scan", rootDir });
             const data = response.data as { items?: AmazonPosterScanItem[] } | undefined;

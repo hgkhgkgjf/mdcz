@@ -80,7 +80,30 @@ const getRootId = (item: DetailViewItem): string => item.id.split(":")[0] || "";
 
 const isRemoteImageCandidate = (value: string): boolean => /^(?:https?:\/\/|data:|blob:)/iu.test(value.trim());
 
-const toAssetCandidate = (candidate: string, item?: DetailViewItem | null): string => {
+const shouldResolveAgainstBaseDir = (candidate: string, item: DetailViewItem): boolean => {
+  if (isAbsoluteLocalPath(candidate)) {
+    return false;
+  }
+
+  const itemRootRelativePath = getRootRelativeItemPath(item);
+  const itemRootRelativeDir = getDirName(itemRootRelativePath);
+  if (!itemRootRelativeDir) {
+    return true;
+  }
+
+  return candidate !== itemRootRelativeDir && !candidate.startsWith(`${itemRootRelativeDir}/`);
+};
+
+const resolveCandidatePath = (candidate: string, item: DetailViewItem, baseDir?: string): string => {
+  const normalizedCandidate = candidate.replace(/\\/gu, "/");
+  const normalizedBaseDir = baseDir?.trim().replace(/\\/gu, "/") ?? "";
+  if (normalizedBaseDir && shouldResolveAgainstBaseDir(normalizedCandidate, item)) {
+    return joinPath(normalizedBaseDir, normalizedCandidate);
+  }
+  return normalizedCandidate;
+};
+
+const toAssetCandidate = (candidate: string, item?: DetailViewItem | null, baseDir?: string): string => {
   const trimmed = candidate.trim();
   if (!trimmed) {
     return "";
@@ -96,7 +119,9 @@ const toAssetCandidate = (candidate: string, item?: DetailViewItem | null): stri
   if (!rootId) {
     return trimmed;
   }
-  return getLibraryAssetSrc({ rootId, path: toRelativePath(item, trimmed) }) || trimmed;
+  return (
+    getLibraryAssetSrc({ rootId, path: toRelativePath(item, resolveCandidatePath(trimmed, item, baseDir)) }) || trimmed
+  );
 };
 
 export const createWebDetailPort = (): DetailActionPort => ({
@@ -105,8 +130,9 @@ export const createWebDetailPort = (): DetailActionPort => ({
     openFolder: "hidden",
     openNfo: "enabled",
   },
-  resolveImageCandidates: async (candidates, _baseDir, item) =>
-    dedupeValues(candidates.map((candidate) => toAssetCandidate(candidate, item))),
+  showFilePath: false,
+  resolveImageCandidates: async (candidates, baseDir, item) =>
+    dedupeValues(candidates.map((candidate) => toAssetCandidate(candidate, item, baseDir))),
   play: () => undefined,
   openFolder: () => undefined,
   readNfo: async (item, path) => {

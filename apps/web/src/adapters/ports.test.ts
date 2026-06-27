@@ -1,6 +1,9 @@
 import type { ScanTaskDto } from "@mdcz/shared/serverDtos";
 import { useWorkbenchTaskStore } from "@mdcz/shared/stores/workbenchTaskStore";
 import type { LocalScanEntry } from "@mdcz/shared/types";
+import { DetailPanelAdapter } from "@mdcz/views/adapters";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, setAdminToken } from "../client";
 import { createWebDetailPort, createWebMaintenanceActionPort, createWebScrapeActionPort } from "./ports";
@@ -35,6 +38,28 @@ afterEach(() => {
 });
 
 describe("web detail action port", () => {
+  it("hides low-value relative file paths in the WebUI detail panel", () => {
+    expect(createWebDetailPort().showFilePath).toBe(false);
+  });
+
+  it("does not render the root-relative file path block in the WebUI detail panel", () => {
+    const html = renderToStaticMarkup(
+      createElement(DetailPanelAdapter, {
+        port: createWebDetailPort(),
+        item: {
+          id: "root-1:ABC-001.mp4",
+          number: "ABC-001",
+          path: "ABC-001.mp4",
+          status: "success",
+          title: "ABC-001",
+        },
+      }),
+    );
+
+    expect(html).not.toContain("文件路径");
+    expect(html).not.toContain("ABC-001.mp4");
+  });
+
   it("resolves root-relative image candidates through authenticated library assets", async () => {
     setAdminToken("token-1");
     const port = createWebDetailPort();
@@ -69,6 +94,47 @@ describe("web detail action port", () => {
 
     expect(poster).toBe(
       "http://127.0.0.1:3838/api/library/assets/root-1/JAV_output/Actor%20A/GNI-006/poster.jpg?token=token-1",
+    );
+  });
+
+  it("resolves selected-maintenance image candidates relative to the current video directory", async () => {
+    setAdminToken("token-1");
+    const port = createWebDetailPort();
+    const [thumb, scene] = await port.resolveImageCandidates(
+      ["thumb.jpg", "extrafanart/1.jpg"],
+      "/srv/media/JAV_output/Actor A/GNI-006",
+      {
+        id: "root-1:JAV_output/Actor A/GNI-006/GNI-006.mp4",
+        number: "GNI-006",
+        path: "/srv/media/JAV_output/Actor A/GNI-006/GNI-006.mp4",
+        status: "success",
+      },
+    );
+
+    expect(thumb).toBe(
+      "http://127.0.0.1:3838/api/library/assets/root-1/JAV_output/Actor%20A/GNI-006/thumb.jpg?token=token-1",
+    );
+    expect(scene).toBe(
+      "http://127.0.0.1:3838/api/library/assets/root-1/JAV_output/Actor%20A/GNI-006/extrafanart/1.jpg?token=token-1",
+    );
+  });
+
+  it("keeps root-relative image candidates anchored at the media root", async () => {
+    setAdminToken("token-1");
+    const port = createWebDetailPort();
+    const [scene] = await port.resolveImageCandidates(
+      ["JAV_output/Actor A/GNI-006/extrafanart/1.jpg"],
+      "/srv/media/JAV_output/Actor A/GNI-006",
+      {
+        id: "root-1:JAV_output/Actor A/GNI-006/GNI-006.mp4",
+        number: "GNI-006",
+        path: "/srv/media/JAV_output/Actor A/GNI-006/GNI-006.mp4",
+        status: "success",
+      },
+    );
+
+    expect(scene).toBe(
+      "http://127.0.0.1:3838/api/library/assets/root-1/JAV_output/Actor%20A/GNI-006/extrafanart/1.jpg?token=token-1",
     );
   });
 });
